@@ -15,15 +15,45 @@
 </template>
 
 <script>
+  import PubSub from 'pubsub-js'
+  import axios from 'axios'
+
   export default {
     name: "",
     data() {
       return {
-        firstView:true,
+        firstView: true,
         loading: false,
-        users:null,
-        errorMsg:''
+        users: null,
+        errorMsg: ''
       }
+    },
+    mounted() {
+      //在此处订阅消息
+      PubSub.subscribe('search', (msg, searchName) => {
+        const url = `https://api.github.com/search/users?q=${searchName}`
+        //更新状态
+        this.firstView = false
+        this.loading = true
+        this.users = null
+        this.errorMsg = ''
+        //发送ajax请求
+        axios.get(url).then(response => {
+          const result = response.data
+          const users = result.items.map(item => ({
+            url: item.html_url,
+            photo: item.avatar_url,
+            name: item.login
+          }))
+          //成功 更新状态
+          this.loading = false
+          this.users = users
+        }).catch(error=>{
+          this.loading = false
+          this.errorMsg = '请求失败'
+        })
+
+      })
     }
   }
 </script>
